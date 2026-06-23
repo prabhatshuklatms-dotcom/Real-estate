@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  BUILDER
+  VIEWER
+}
+
+enum Plan {
+  FREE
+  BASIC
+  PRO
+}
+
+// PlotStatus enum removed in favor of PlotStatusMaster
+
+model User {
+  id         Int       @id @default(autoincrement())
+  name       String
+  email      String    @unique
+  password   String
+  role       Role      @default(BUILDER)   // ← added
+  plan       Plan      @default(FREE)      // ← added
+  planExpiry DateTime?                     // ← added
+  createdAt  DateTime  @default(now())
+
+  projects   Project[]
+}
+
+model Project {
+  id           Int        @id @default(autoincrement())
+  name         String
+  slug         String     @unique
+  description  String?
+  location     String?
+  layoutSvgUrl String?
+  isPublished  Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+
+  builderId    Int
+  builder      User       @relation(fields: [builderId], references: [id])
+
+  plots        Plot[]
+  gallery      Gallery[]    // ← add this
+  inquiries    Inquiry[]    // ← add this
+  locationData Location?    // ← rename to locationData to avoid conflict
+  roads        ProjectRoad[]
+  amenities    ProjectAmenity[]
+}
+
+model Plot {
+  id           Int        @id @default(autoincrement())
+  plotNumber   String
+  areaSqft     Float?
+  price        Float?
+  status       String     @default("Available")
+  svgElementId String
+  geometry     Json?      // 3D/2D coordinates and rotation/scale
+  createdAt    DateTime   @default(now())
+
+  projectId    Int
+  project      Project    @relation(fields: [projectId], references: [id])
+}
+
+model Gallery {
+  id        Int      @id @default(autoincrement())
+  imageUrl  String
+  caption   String?
+  projectId Int
+  project   Project  @relation(fields: [projectId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Inquiry {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  phone     String
+  message   String?
+  status    String   @default("pending")  
+  projectId Int
+  project   Project  @relation(fields: [projectId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Location {
+  id          Int      @id @default(autoincrement())
+  latitude    Float
+  longitude   Float
+  address     String?
+  geoFeatures Json?    // stores drawn shapes: boundary, roads, plots
+  projectId   Int      @unique
+  project     Project  @relation(fields: [projectId], references: [id])
+}
+
+model PlotStatusMaster {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  color String @default("#10b981") // Default to emerald green
+}
+
+model PlotTypeMaster {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+}
+
+model RoadMaster {
+  id        Int     @id @default(autoincrement())
+  roadName  String
+  roadWidth String?
+  roadType  String?
+  imageUrl  String?
+  projects  ProjectRoad[]
+}
+
+model AmenityMaster {
+  id        Int              @id @default(autoincrement())
+  name      String           @unique
+  projects  ProjectAmenity[]
+}
+
+model ProjectRoad {
+  id           Int        @id @default(autoincrement())
+  geometry     Json?      // 3D/2D coordinates and path data
+  createdAt    DateTime   @default(now())
+
+  projectId    Int
+  project      Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  roadMasterId Int
+  roadMaster   RoadMaster @relation(fields: [roadMasterId], references: [id])
+}
+
+model ProjectAmenity {
+  id              Int           @id @default(autoincrement())
+  geometry        Json?         // 3D/2D coordinates
+  createdAt       DateTime      @default(now())
+
+  projectId       Int
+  project         Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  amenityMasterId Int
+  amenityMaster   AmenityMaster @relation(fields: [amenityMasterId], references: [id])
+}
