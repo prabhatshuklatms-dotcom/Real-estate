@@ -96,6 +96,7 @@ model Location {
   longitude   Float
   address     String?
   geoFeatures Json?    // stores drawn shapes: boundary, roads, plots
+  overlays    Json?    // stores unity 2d style master overlays
   projectId   Int      @unique
   project     Project  @relation(fields: [projectId], references: [id])
 }
@@ -123,6 +124,7 @@ model RoadMaster {
 model AmenityMaster {
   id        Int              @id @default(autoincrement())
   name      String           @unique
+  imageUrl  String?
   projects  ProjectAmenity[]
 }
 

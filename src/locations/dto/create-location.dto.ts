@@ -15,6 +15,9 @@ export class CreateLocationDto {
   @IsOptional()
   geoFeatures?: Record<string, any>; // GeoJSON FeatureCollection
 
+  @IsOptional()
+  overlays?: any[];
+
   @IsNumber()
   projectId: number;
 }

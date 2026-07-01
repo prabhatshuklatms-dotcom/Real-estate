@@ -23,7 +23,7 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: '/uploads',
   });
 
